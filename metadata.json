@@ -1,0 +1,6 @@
+{
+  "name": "Versus Arena - Interactive Voting Platform",
+  "description": "A sleek, dark-themed interactive comparison voting platform featuring 5 versus matchups with live percentages, timer controls, media support, admin post controls, and dramatic KING winner celebrations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
