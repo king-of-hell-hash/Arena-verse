@@ -66,9 +66,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="block text-[11px] font-mono uppercase font-bold text-gray-300 mb-1.5 flex items-center justify-between">
-              <span>Secret Password</span>
-              <span className="text-[10px] text-purple-400 font-normal">Default: admin123</span>
+            <label className="block text-[11px] font-mono uppercase font-bold text-gray-300 mb-1.5">
+              Secret Password
             </label>
 
             <div className="relative">
@@ -101,7 +100,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
             {error && (
               <p className="mt-1.5 text-[11px] text-red-400 font-mono flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> Incorrect secret password. Try default: admin123
+                <AlertCircle className="w-3.5 h-3.5" /> Incorrect secret password. Access denied.
               </p>
             )}
           </div>
