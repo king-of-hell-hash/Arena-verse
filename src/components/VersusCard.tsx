@@ -9,6 +9,7 @@ import { TIMER_OPTIONS } from '../data/initialMatchups';
 interface VersusCardProps {
   matchup: Matchup;
   index: number;
+  isAdmin?: boolean;
   onVote: (matchupId: string, side: 'sideA' | 'sideB') => void;
   onUpdateMatchup: (updated: Matchup) => void;
 }
@@ -16,6 +17,7 @@ interface VersusCardProps {
 export const VersusCard: React.FC<VersusCardProps> = ({
   matchup,
   index,
+  isAdmin = false,
   onVote,
   onUpdateMatchup,
 }) => {
@@ -117,15 +119,17 @@ export const VersusCard: React.FC<VersusCardProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsQuickEditing(!isQuickEditing)}
-            className="p-1 rounded-md hover:bg-white/10 text-gray-400 hover:text-white transition-all cursor-pointer"
-            title="Edit card"
-          >
-            <Edit3 className="w-3 h-3 text-purple-400" />
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsQuickEditing(!isQuickEditing)}
+              className="p-1 rounded-md hover:bg-white/10 text-purple-400 hover:text-white transition-all cursor-pointer"
+              title="Admin Quick Edit card"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-purple-400" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Duel Title */}
@@ -140,8 +144,8 @@ export const VersusCard: React.FC<VersusCardProps> = ({
         </h2>
       </div>
 
-      {/* Quick Edit Inline Form */}
-      {isQuickEditing && (
+      {/* Quick Edit Inline Form (Only for Admin) */}
+      {isAdmin && isQuickEditing && (
         <div className="mb-4 p-3 rounded-xl bg-black/70 border border-purple-500/40 space-y-3 animate-in fade-in">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1">
@@ -376,6 +380,7 @@ export const VersusCard: React.FC<VersusCardProps> = ({
             timerDuration={timerDuration}
             timerEndsAt={timerEndsAt}
             status={status}
+            isAdmin={isAdmin}
             onDurationChange={handleDurationChange}
             onRestartTimer={handleRestartTimer}
             onExpire={handleExpire}

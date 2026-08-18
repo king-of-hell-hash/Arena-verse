@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Swords, Flame, Trophy, Sparkles, ShieldAlert, RotateCcw, Award, CheckCircle2, ChevronRight, Zap, TrendingUp, Filter } from 'lucide-react';
+import { Swords, Flame, Trophy, Sparkles, ShieldCheck, RotateCcw, Award, CheckCircle2, ChevronRight, Zap, TrendingUp, Filter, Lock, LogOut, Sliders } from 'lucide-react';
 import { Matchup } from './types';
 import { INITIAL_MATCHUPS } from './data/initialMatchups';
+import { ADMIN_SESSION_KEY } from './config/adminConfig';
 import { Navbar } from './components/Navbar';
 import { VersusCard } from './components/VersusCard';
 import { AdminPanel } from './components/AdminPanel';
+import { AdminLoginModal } from './components/AdminLoginModal';
 
 const STORAGE_KEY = 'versus_arena_matchups_v1';
 
@@ -21,10 +23,19 @@ export default function App() {
     return INITIAL_MATCHUPS;
   });
 
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'concluded'>('all');
 
-  // Save to local storage on changes
+  // Save matchups to local storage on changes
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(matchups));
@@ -32,6 +43,29 @@ export default function App() {
       console.error('Failed to save matchups', e);
     }
   }, [matchups]);
+
+  // Handle Admin Login Success
+  const handleLoginSuccess = () => {
+    setIsAdminAuthenticated(true);
+    setIsLoginModalOpen(false);
+    setIsAdminOpen(true);
+    try {
+      localStorage.setItem(ADMIN_SESSION_KEY, 'true');
+    } catch (e) {
+      console.error('Failed to save admin session', e);
+    }
+  };
+
+  // Handle Admin Logout
+  const handleLogout = () => {
+    setIsAdminAuthenticated(false);
+    setIsAdminOpen(false);
+    try {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+    } catch (e) {
+      console.error('Failed to remove admin session', e);
+    }
+  };
 
   // Handle single vote increment
   const handleVote = (matchupId: string, side: 'sideA' | 'sideB') => {
@@ -91,11 +125,45 @@ export default function App() {
       {/* Top Bento Navbar */}
       <Navbar
         matchups={matchups}
+        isAdminAuthenticated={isAdminAuthenticated}
         isAdminOpen={isAdminOpen}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onToggleAdmin={() => setIsAdminOpen(!isAdminOpen)}
+        onLogout={handleLogout}
         onResetAll={handleResetAll}
         onJumpToMatch={handleJumpToMatch}
       />
+
+      {/* Admin Mode Floating Alert Bar (Only when Admin is Authenticated) */}
+      {isAdminAuthenticated && (
+        <div className="bg-gradient-to-r from-purple-900/60 via-purple-800/40 to-blue-900/60 border-b border-purple-500/30 px-4 py-2 backdrop-blur-md sticky top-18 sm:top-20 z-30 animate-in fade-in">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+            <div className="flex items-center gap-2 text-purple-200">
+              <span className="p-1 rounded bg-purple-500/30 text-purple-300">
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </span>
+              <span>
+                <strong className="text-white font-bold">ADMIN UNLOCKED:</strong> You have full creator control over all 5 sections, timers & votes.
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsAdminOpen(true)}
+                className="px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-[11px] shadow-sm transition-all cursor-pointer flex items-center gap-1"
+              >
+                <Sliders className="w-3 h-3" /> Control Panel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-2.5 py-1 rounded bg-black/40 hover:bg-red-950/60 text-gray-300 hover:text-red-300 border border-white/10 text-[11px] transition-all cursor-pointer flex items-center gap-1"
+              >
+                <LogOut className="w-3 h-3" /> Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Bento Grid Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-6">
@@ -210,6 +278,7 @@ export default function App() {
               <VersusCard
                 matchup={matchup}
                 index={index}
+                isAdmin={isAdminAuthenticated}
                 onVote={handleVote}
                 onUpdateMatchup={handleUpdateMatchup}
               />
@@ -230,13 +299,21 @@ export default function App() {
         </section>
       </main>
 
-      {/* Admin Panel Modal */}
+      {/* Admin Panel Modal (Only accessible when Authenticated) */}
       <AdminPanel
-        isOpen={isAdminOpen}
+        isOpen={isAdminOpen && isAdminAuthenticated}
         matchups={matchups}
         onClose={() => setIsAdminOpen(false)}
         onUpdateMatchup={handleUpdateMatchup}
         onResetAll={handleResetAll}
+        onLogout={handleLogout}
+      />
+
+      {/* Secret Password Authentication Modal */}
+      <AdminLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {/* Footer in Bento style */}
@@ -246,10 +323,28 @@ export default function App() {
             <Swords className="w-3.5 h-3.5 text-blue-400" />
             <span>VERSUS ARENA • BENTO EDITION</span>
           </div>
-          <p>© 2026 Versus Arena. 5 Comparisons with auto-playing video reels, live gauges & KING celebrations.</p>
+
+          <div className="flex items-center gap-4">
+            <p>© 2026 Versus Arena. All rights reserved.</p>
+            {isAdminAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="text-[10px] text-red-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <LogOut className="w-3 h-3" /> Admin Logout
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="text-[10px] text-gray-500 hover:text-gray-300 flex items-center gap-1 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                title="Creator Secret Access"
+              >
+                <Lock className="w-2.5 h-2.5" /> Admin Access
+              </button>
+            )}
+          </div>
         </div>
       </footer>
     </div>
   );
 }
-

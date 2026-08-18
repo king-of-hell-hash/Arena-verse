@@ -1,19 +1,25 @@
 import React from 'react';
-import { Swords, ShieldAlert, RotateCcw, Flame, Trophy, Sparkles } from 'lucide-react';
+import { ShieldCheck, RotateCcw, Trophy, Lock, LogOut, Sliders } from 'lucide-react';
 import { Matchup } from '../types';
 
 interface NavbarProps {
   matchups: Matchup[];
+  isAdminAuthenticated: boolean;
   isAdminOpen: boolean;
+  onOpenLoginModal: () => void;
   onToggleAdmin: () => void;
+  onLogout: () => void;
   onResetAll: () => void;
   onJumpToMatch: (id: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   matchups,
+  isAdminAuthenticated,
   isAdminOpen,
+  onOpenLoginModal,
   onToggleAdmin,
+  onLogout,
   onResetAll,
   onJumpToMatch,
 }) => {
@@ -63,32 +69,54 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            <div
-              id="admin-toggle-btn"
-              onClick={onToggleAdmin}
-              className={`px-4 py-2 rounded-full cursor-pointer transition-all border flex items-center gap-2 shadow-sm ${
-                isAdminOpen
-                  ? 'bg-purple-600 border-purple-400 text-white shadow-purple-500/30'
-                  : 'bg-white/10 hover:bg-white/20 border-white/10 text-white'
-              }`}
-              title="Toggle Config Panel"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-purple-300" />
-              <span className="text-[11px] font-bold uppercase tracking-wider">
-                {isAdminOpen ? 'Close Config' : 'Config Panel'}
-              </span>
-            </div>
+          {/* Action Buttons (Different for Public Visitor vs Admin) */}
+          <div className="flex items-center gap-2.5">
+            {isAdminAuthenticated ? (
+              <>
+                <div
+                  id="admin-toggle-btn"
+                  onClick={onToggleAdmin}
+                  className={`px-3.5 py-1.5 rounded-full cursor-pointer transition-all border flex items-center gap-2 shadow-sm ${
+                    isAdminOpen
+                      ? 'bg-purple-600 border-purple-400 text-white shadow-purple-500/30'
+                      : 'bg-purple-600/20 hover:bg-purple-600/30 border-purple-500/40 text-purple-200'
+                  }`}
+                  title="Toggle Admin Control Center"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-purple-300" />
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider">
+                    {isAdminOpen ? 'Close Controls' : 'Admin Controls'}
+                  </span>
+                </div>
 
-            <button
-              id="reset-all-btn"
-              onClick={onResetAll}
-              className="p-2 rounded-full bg-white/5 hover:bg-white/15 text-gray-400 hover:text-white border border-white/10 transition-all cursor-pointer"
-              title="Reset all votes & timers to initial state"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  id="reset-all-btn"
+                  onClick={onResetAll}
+                  className="p-2 rounded-full bg-white/5 hover:bg-white/15 text-gray-400 hover:text-white border border-white/10 transition-all cursor-pointer"
+                  title="Reset all votes & timers to initial default state"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={onLogout}
+                  className="p-2 rounded-full bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-500/30 transition-all cursor-pointer"
+                  title="Logout & Lock Admin Mode"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </>
+            ) : (
+              /* Subtle / discreet Admin Login trigger for owner */
+              <button
+                onClick={onOpenLoginModal}
+                className="px-3 py-1.5 rounded-full bg-white/[0.03] hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 text-[11px] font-mono transition-all cursor-pointer flex items-center gap-1.5"
+                title="Admin Authentication"
+              >
+                <Lock className="w-3 h-3 text-gray-400" />
+                <span className="hidden sm:inline">Admin Login</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -113,4 +141,5 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
 
