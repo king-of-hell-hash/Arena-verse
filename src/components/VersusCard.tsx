@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles, Trophy, Edit3, ThumbsUp, Lock, RefreshCw, Zap, Video } from 'lucide-react';
 import { Matchup, TimerDurationKey } from '../types';
 import { MediaDisplay } from './MediaDisplay';
@@ -54,7 +54,7 @@ export const VersusCard: React.FC<VersusCardProps> = ({
     onVote(matchup.id, side);
   };
 
-  const handleExpire = () => {
+  const handleExpire = useCallback(() => {
     if (status !== 'expired') {
       const updated: Matchup = {
         ...matchup,
@@ -63,9 +63,9 @@ export const VersusCard: React.FC<VersusCardProps> = ({
       onUpdateMatchup(updated);
       triggerKingCelebration();
     }
-  };
+  }, [status, matchup, onUpdateMatchup]);
 
-  const handleDurationChange = (key: TimerDurationKey) => {
+  const handleDurationChange = useCallback((key: TimerDurationKey) => {
     const opt = TIMER_OPTIONS.find((o) => o.key === key) || TIMER_OPTIONS[1];
     const updated: Matchup = {
       ...matchup,
@@ -75,9 +75,9 @@ export const VersusCard: React.FC<VersusCardProps> = ({
     };
     setHasCelebrated(false);
     onUpdateMatchup(updated);
-  };
+  }, [matchup, onUpdateMatchup]);
 
-  const handleRestartTimer = (key?: TimerDurationKey) => {
+  const handleRestartTimer = useCallback((key?: TimerDurationKey) => {
     const targetKey = key || timerDuration;
     const opt = TIMER_OPTIONS.find((o) => o.key === targetKey) || TIMER_OPTIONS[1];
     const updated: Matchup = {
@@ -88,7 +88,7 @@ export const VersusCard: React.FC<VersusCardProps> = ({
     };
     setHasCelebrated(false);
     onUpdateMatchup(updated);
-  };
+  }, [matchup, timerDuration, onUpdateMatchup]);
 
   // Color theme per duel index
   const categoryColors = [

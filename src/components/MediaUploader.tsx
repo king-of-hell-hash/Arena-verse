@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Image as ImageIcon, Video as VideoIcon, Trash2, RefreshCw, Link as LinkIcon, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { Upload, Image as ImageIcon, Video as VideoIcon, Trash2, RefreshCw, Link as LinkIcon, Check, AlertCircle, Sparkles, Square, LayoutTemplate } from 'lucide-react';
 import { MediaType } from '../types';
 import { saveMediaFile, formatFileSize } from '../utils/mediaStorage';
+import { PhotoInFrame, AspectRatioOption } from './PhotoInFrame';
 
 interface MediaUploaderProps {
   mediaType: MediaType;
@@ -22,7 +23,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isUrlMode, setIsUrlMode] = useState(false);
+  const [viewMode, setViewMode] = useState<'upload' | 'frame' | 'url'>('upload');
   const [inputUrl, setInputUrl] = useState(mediaUrl);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(() => {
     if (mediaUrl.startsWith('data:')) return 'Uploaded File';
@@ -90,7 +91,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   const handleRemoveMedia = () => {
     setSelectedFileName(null);
     setInputUrl('');
-    // Default placeholder
     const placeholder = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
     onMediaChange(placeholder, 'image');
     if (fileInputRef.current) {
@@ -107,119 +107,163 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
   return (
     <div className="space-y-2">
-      {/* Hidden Native Mobile & Desktop File Picker Input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,video/mp4,video/quicktime,video/webm,video/x-m4v,video/*,image/*"
-        onChange={handleInputChange}
-        className="hidden"
-        id={`file-picker-${sideLabel.replace(/\s+/g, '-').toLowerCase()}`}
-      />
-
-      {/* Main Upload Box / Dropzone */}
-      {!isUrlMode ? (
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-          className={`relative rounded-xl p-3 border border-dashed transition-all ${
-            isDragging
-              ? `${themeBorder} bg-white/10 scale-[1.01]`
-              : 'border-white/20 bg-black/40 hover:border-white/30'
+      {/* Mode Selector Tabs */}
+      <div className="flex items-center gap-1 p-1 bg-black/50 border border-white/10 rounded-lg text-[10px] font-mono">
+        <button
+          type="button"
+          onClick={() => setViewMode('upload')}
+          className={`flex-1 py-1 rounded-md transition-all flex items-center justify-center gap-1 cursor-pointer ${
+            viewMode === 'upload' ? `${themeBg} text-white font-bold` : 'text-gray-400 hover:text-white'
           }`}
         >
-          {mediaUrl ? (
-            <div className="flex items-center gap-3">
-              {/* Media Thumbnail Preview */}
-              <div className="relative w-16 h-14 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-black/60">
-                {mediaType === 'video' ? (
-                  <video
-                    src={mediaUrl}
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={mediaUrl}
-                    alt="Preview"
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                <span className="absolute top-1 right-1 p-0.5 rounded bg-black/70 text-white text-[8px]">
-                  {mediaType === 'video' ? <VideoIcon className="w-2.5 h-2.5 text-blue-400" /> : <ImageIcon className="w-2.5 h-2.5 text-purple-400" />}
-                </span>
-              </div>
+          <Upload className="w-2.5 h-2.5" /> Gallery Upload
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('frame')}
+          className={`flex-1 py-1 rounded-md transition-all flex items-center justify-center gap-1 cursor-pointer ${
+            viewMode === 'frame' ? `${themeBg} text-white font-bold` : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <LayoutTemplate className="w-2.5 h-2.5" /> Photo in Frame
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('url')}
+          className={`flex-1 py-1 rounded-md transition-all flex items-center justify-center gap-1 cursor-pointer ${
+            viewMode === 'url' ? `${themeBg} text-white font-bold` : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <LinkIcon className="w-2.5 h-2.5" /> Direct URL
+        </button>
+      </div>
 
-              {/* File Info & Actions */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${themeText}`}>
-                    {mediaType === 'video' ? 'Video File' : 'Photo File'}
-                  </span>
-                  {selectedFileName && (
-                    <span className="text-[9px] text-emerald-400 font-mono flex items-center gap-0.5">
-                      <Check className="w-2.5 h-2.5" /> Ready
-                    </span>
+      {/* Mode 1: Photo-in-Frame Studio */}
+      {viewMode === 'frame' ? (
+        <PhotoInFrame
+          initialImageUrl={mediaUrl}
+          sideLabel={sideLabel}
+          accentColor={accentColor}
+          onImageChange={(newUrl, fileName) => {
+            onMediaChange(newUrl, 'image', fileName);
+            setSelectedFileName(fileName || 'Framed Photo');
+          }}
+          onRemoveImage={handleRemoveMedia}
+        />
+      ) : viewMode === 'upload' ? (
+        /* Mode 2: Standard Media Dropzone */
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,video/mp4,video/quicktime,video/webm,video/x-m4v,video/*,image/*"
+            onChange={handleInputChange}
+            className="hidden"
+            id={`file-picker-${sideLabel.replace(/\s+/g, '-').toLowerCase()}`}
+          />
+
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className={`relative rounded-xl p-3 border border-dashed transition-all ${
+              isDragging
+                ? `${themeBorder} bg-white/10 scale-[1.01]`
+                : 'border-white/20 bg-black/40 hover:border-white/30'
+            }`}
+          >
+            {mediaUrl ? (
+              <div className="flex items-center gap-3">
+                {/* Media Thumbnail Preview */}
+                <div className="relative w-16 h-14 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-black/60">
+                  {mediaType === 'video' ? (
+                    <video
+                      src={mediaUrl}
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={mediaUrl}
+                      alt="Preview"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
                   )}
+                  <span className="absolute top-1 right-1 p-0.5 rounded bg-black/70 text-white text-[8px]">
+                    {mediaType === 'video' ? <VideoIcon className="w-2.5 h-2.5 text-blue-400" /> : <ImageIcon className="w-2.5 h-2.5 text-purple-400" />}
+                  </span>
                 </div>
-                <p className="text-[11px] font-mono text-gray-200 truncate" title={selectedFileName || mediaUrl}>
-                  {selectedFileName || 'Custom Media Loaded'}
+
+                {/* File Info & Actions */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${themeText}`}>
+                      {mediaType === 'video' ? 'Video File' : 'Photo File'}
+                    </span>
+                    {selectedFileName && (
+                      <span className="text-[9px] text-emerald-400 font-mono flex items-center gap-0.5">
+                        <Check className="w-2.5 h-2.5" /> Ready
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-mono text-gray-200 truncate" title={selectedFileName || mediaUrl}>
+                    {selectedFileName || 'Custom Media Loaded'}
+                  </p>
+
+                  {/* Replace / Remove Controls */}
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isProcessing}
+                      className={`px-2 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${themeBg} hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1 shadow-sm ${themeGlow}`}
+                    >
+                      <Upload className="w-2.5 h-2.5" />
+                      {isProcessing ? 'Processing...' : 'Change File'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveMedia}
+                      className="px-2 py-1 rounded-md text-[10px] font-mono text-gray-400 hover:text-red-400 hover:bg-white/5 border border-white/10 transition-all cursor-pointer flex items-center gap-1"
+                    >
+                      <Trash2 className="w-2.5 h-2.5" /> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Empty State */
+              <div className="flex flex-col items-center justify-center text-center py-3 px-2">
+                <div className={`p-2.5 rounded-full ${isBlue ? 'bg-blue-600/20 text-blue-400' : 'bg-purple-600/20 text-purple-400'} mb-2 border border-white/10`}>
+                  <Upload className="w-5 h-5" />
+                </div>
+                <p className="text-xs font-bold text-white font-mono">
+                  Upload Photo or Video
+                </p>
+                <p className="text-[10px] text-gray-400 font-mono mt-0.5">
+                  Tap to pick from camera roll / files or drag & drop here
                 </p>
 
-                {/* Replace / Remove Controls */}
-                <div className="flex items-center gap-2 mt-1.5">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isProcessing}
-                    className={`px-2 py-1 rounded-md text-[10px] font-mono font-bold uppercase ${themeBg} hover:opacity-90 text-white transition-all cursor-pointer flex items-center gap-1 shadow-sm ${themeGlow}`}
-                  >
-                    <Upload className="w-2.5 h-2.5" />
-                    {isProcessing ? 'Processing...' : 'Change File'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRemoveMedia}
-                    className="px-2 py-1 rounded-md text-[10px] font-mono text-gray-400 hover:text-red-400 hover:bg-white/5 border border-white/10 transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <Trash2 className="w-2.5 h-2.5" /> Remove
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessing}
+                  className={`mt-2.5 px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider ${themeBg} text-white shadow-md ${themeGlow} hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5`}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  {isProcessing ? 'Processing File...' : 'Choose from Gallery'}
+                </button>
               </div>
-            </div>
-          ) : (
-            /* Empty State: Choose from Gallery Prompt */
-            <div className="flex flex-col items-center justify-center text-center py-3 px-2">
-              <div className={`p-2.5 rounded-full ${isBlue ? 'bg-blue-600/20 text-blue-400' : 'bg-purple-600/20 text-purple-400'} mb-2 border border-white/10`}>
-                <Upload className="w-5 h-5" />
-              </div>
-              <p className="text-xs font-bold text-white font-mono">
-                Upload Photo or Video
-              </p>
-              <p className="text-[10px] text-gray-400 font-mono mt-0.5">
-                Tap to pick from camera roll / files or drag & drop here
-              </p>
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessing}
-                className={`mt-2.5 px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider ${themeBg} text-white shadow-md ${themeGlow} hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5`}
-              >
-                <Upload className="w-3.5 h-3.5" />
-                {isProcessing ? 'Processing File...' : 'Choose from Gallery'}
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </>
       ) : (
-        /* Alternative URL Input Mode */
+        /* Mode 3: Alternative URL Input Mode */
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5">
             <input
@@ -247,25 +291,10 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         </p>
       )}
 
-      {/* Mode Switcher Link (Gallery Upload vs Direct URL) */}
-      <div className="flex items-center justify-between text-[10px] font-mono text-gray-400 pt-0.5">
-        <span>Accepted: JPG, PNG, WebP, MP4, MOV (up to 60MB)</span>
-        <button
-          type="button"
-          onClick={() => setIsUrlMode(!isUrlMode)}
-          className="text-gray-400 hover:text-white underline cursor-pointer flex items-center gap-1"
-        >
-          {isUrlMode ? (
-            <>
-              <Upload className="w-2.5 h-2.5" /> Switch to Gallery Upload
-            </>
-          ) : (
-            <>
-              <LinkIcon className="w-2.5 h-2.5" /> Paste URL instead
-            </>
-          )}
-        </button>
+      <div className="flex items-center justify-between text-[10px] font-mono text-gray-500 pt-0.5">
+        <span>JPG, PNG, WebP, MP4, MOV (max 60MB)</span>
       </div>
     </div>
   );
 };
+

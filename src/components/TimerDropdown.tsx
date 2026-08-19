@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, ChevronDown, Check, RefreshCw, Lock } from 'lucide-react';
 import { TimerDurationKey } from '../types';
 import { TIMER_OPTIONS } from '../data/initialMatchups';
@@ -13,6 +13,34 @@ interface TimerDropdownProps {
   onExpire: () => void;
 }
 
+interface TimeRemaining {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  isExpired: boolean;
+}
+
+function getTimeRemaining(targetTimestamp: number | null): TimeRemaining {
+  if (!targetTimestamp) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+  }
+
+  const now = Date.now();
+  const diff = targetTimestamp - now;
+
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+
+  return { days, hours, minutes, seconds, isExpired: false };
+}
+
 export const TimerDropdown: React.FC<TimerDropdownProps> = ({
   timerDuration,
   timerEndsAt,
@@ -23,42 +51,51 @@ export const TimerDropdown: React.FC<TimerDropdownProps> = ({
   onExpire,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    totalMs: number;
-  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, totalMs: 0 });
+  const [timeLeft, setTimeLeft] = useState<TimeRemaining>(() =>
+    getTimeRemaining(status === 'expired' ? null : timerEndsAt)
+  );
 
+  // Stable ref for onExpire callback to prevent interval teardown on parent re-renders
+  const onExpireRef = useRef(onExpire);
+  onExpireRef.current = onExpire;
+
+  const expiredTriggeredRef = useRef(false);
+
+  // Reset expired trigger lock when timer ends at or status changes
+  useEffect(() => {
+    expiredTriggeredRef.current = status === 'expired';
+  }, [timerEndsAt, status]);
+
+  // Accurate 1-second interval countdown timer
   useEffect(() => {
     if (!timerEndsAt || status === 'expired') {
-      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, totalMs: 0 });
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true });
       return;
     }
 
-    const calculateTime = () => {
-      const now = Date.now();
-      const diff = timerEndsAt - now;
+    const updateTimer = () => {
+      const remaining = getTimeRemaining(timerEndsAt);
+      setTimeLeft(remaining);
 
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, totalMs: 0 });
-        onExpire();
-        return;
+      if (remaining.isExpired) {
+        if (!expiredTriggeredRef.current) {
+          expiredTriggeredRef.current = true;
+          onExpireRef.current();
+        }
       }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      setTimeLeft({ days, hours, minutes, seconds, totalMs: diff });
     };
 
-    calculateTime();
-    const interval = setInterval(calculateTime, 1000);
-    return () => clearInterval(interval);
-  }, [timerEndsAt, status, onExpire]);
+    // Run initial calculation immediately
+    updateTimer();
+
+    // Setup 1000ms tick interval
+    const intervalId = window.setInterval(updateTimer, 1000);
+
+    // Clean cleanup on unmount or dependency change
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [timerEndsAt, status]);
 
   const formatNumber = (num: number) => num.toString().padStart(2, '0');
   const currentOption = TIMER_OPTIONS.find((opt) => opt.key === timerDuration) || TIMER_OPTIONS[1];
@@ -118,7 +155,7 @@ export const TimerDropdown: React.FC<TimerDropdownProps> = ({
 
       {/* Countdown Clock Display */}
       <div className="flex items-center gap-2">
-        {status === 'active' ? (
+        {status === 'active' && !timeLeft.isExpired ? (
           <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-xs text-gray-300 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-md">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
             {timeLeft.days > 0 && <span className="text-gray-400">{timeLeft.days}d </span>}
@@ -147,4 +184,3 @@ export const TimerDropdown: React.FC<TimerDropdownProps> = ({
     </div>
   );
 };
-
