@@ -3,6 +3,7 @@ import { Sparkles, Trophy, Edit3, ThumbsUp, Lock, RefreshCw, Zap, Video } from '
 import { Matchup, TimerDurationKey } from '../types';
 import { MediaDisplay } from './MediaDisplay';
 import { TimerDropdown } from './TimerDropdown';
+import { MediaUploader } from './MediaUploader';
 import { triggerKingCelebration, triggerVotePulse } from '../utils/confetti';
 import { TIMER_OPTIONS } from '../data/initialMatchups';
 
@@ -175,17 +176,17 @@ export const VersusCard: React.FC<VersusCardProps> = ({
                 }
                 className="w-full bg-black/50 border border-white/10 rounded px-2 py-1 text-white text-[10px]"
               />
-              <input
-                type="text"
-                placeholder="Image/Video URL"
-                value={sideA.mediaUrl}
-                onChange={(e) =>
+              <MediaUploader
+                mediaType={sideA.mediaType}
+                mediaUrl={sideA.mediaUrl}
+                sideLabel={`Card #${index + 1} Side A`}
+                accentColor="blue"
+                onMediaChange={(newUrl, detectedType) => {
                   onUpdateMatchup({
                     ...matchup,
-                    sideA: { ...sideA, mediaUrl: e.target.value },
-                  })
-                }
-                className="w-full bg-black/50 border border-white/10 rounded px-2 py-1 text-white text-[10px] font-mono"
+                    sideA: { ...sideA, mediaUrl: newUrl, mediaType: detectedType },
+                  });
+                }}
               />
             </div>
 
@@ -204,17 +205,17 @@ export const VersusCard: React.FC<VersusCardProps> = ({
                 }
                 className="w-full bg-black/50 border border-white/10 rounded px-2 py-1 text-white text-[10px]"
               />
-              <input
-                type="text"
-                placeholder="Image/Video URL"
-                value={sideB.mediaUrl}
-                onChange={(e) =>
+              <MediaUploader
+                mediaType={sideB.mediaType}
+                mediaUrl={sideB.mediaUrl}
+                sideLabel={`Card #${index + 1} Side B`}
+                accentColor="purple"
+                onMediaChange={(newUrl, detectedType) => {
                   onUpdateMatchup({
                     ...matchup,
-                    sideB: { ...sideB, mediaUrl: e.target.value },
-                  })
-                }
-                className="w-full bg-black/50 border border-white/10 rounded px-2 py-1 text-white text-[10px] font-mono"
+                    sideB: { ...sideB, mediaUrl: newUrl, mediaType: detectedType },
+                  });
+                }}
               />
             </div>
           </div>

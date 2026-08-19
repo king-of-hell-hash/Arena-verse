@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ShieldCheck, X, Image, Video, RotateCcw, Check, LogOut, Sliders, Clock, Trophy, RefreshCw } from 'lucide-react';
-import { Matchup, TimerDurationKey } from '../types';
+import { Matchup, TimerDurationKey, MediaType } from '../types';
 import { TIMER_OPTIONS } from '../data/initialMatchups';
+import { MediaUploader } from './MediaUploader';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -247,44 +248,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-semibold text-gray-400 mb-1 font-mono">Media Type</label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSideChange('sideA', 'mediaType', 'image')}
-                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                        currentMatch.sideA.mediaType === 'image'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-black/50 text-gray-400 border border-white/10 hover:text-white'
-                      }`}
-                    >
-                      <Image className="w-3 h-3" /> Image
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSideChange('sideA', 'mediaType', 'video')}
-                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                        currentMatch.sideA.mediaType === 'video'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-black/50 text-gray-400 border border-white/10 hover:text-white'
-                      }`}
-                    >
-                      <Video className="w-3 h-3" /> MP4 Video
-                    </button>
-                  </div>
-                </div>
-
+                {/* Media Upload from Gallery / Device */}
                 <div>
                   <label className="block text-[10px] font-semibold text-gray-400 mb-1 font-mono">
-                    {currentMatch.sideA.mediaType === 'video' ? 'Direct Video URL (.mp4)' : 'Image URL'}
+                    Side A Photo / Video
                   </label>
-                  <input
-                    type="url"
-                    value={currentMatch.sideA.mediaUrl}
-                    onChange={(e) => handleSideChange('sideA', 'mediaUrl', e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-[10px] text-white focus:outline-none focus:border-blue-500 font-mono"
-                    placeholder="https://..."
+                  <MediaUploader
+                    mediaType={currentMatch.sideA.mediaType}
+                    mediaUrl={currentMatch.sideA.mediaUrl}
+                    sideLabel="Side A"
+                    accentColor="blue"
+                    onMediaChange={(newUrl, detectedType) => {
+                      if (!currentMatch) return;
+                      const updated = {
+                        ...currentMatch,
+                        sideA: {
+                          ...currentMatch.sideA,
+                          mediaUrl: newUrl,
+                          mediaType: detectedType,
+                        },
+                      };
+                      onUpdateMatchup(updated);
+                      showSavedNotification();
+                    }}
                   />
                 </div>
               </div>
@@ -328,44 +314,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-semibold text-gray-400 mb-1 font-mono">Media Type</label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSideChange('sideB', 'mediaType', 'image')}
-                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                        currentMatch.sideB.mediaType === 'image'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-black/50 text-gray-400 border border-white/10 hover:text-white'
-                      }`}
-                    >
-                      <Image className="w-3 h-3" /> Image
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSideChange('sideB', 'mediaType', 'video')}
-                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                        currentMatch.sideB.mediaType === 'video'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-black/50 text-gray-400 border border-white/10 hover:text-white'
-                      }`}
-                    >
-                      <Video className="w-3 h-3" /> MP4 Video
-                    </button>
-                  </div>
-                </div>
-
+                {/* Media Upload from Gallery / Device */}
                 <div>
                   <label className="block text-[10px] font-semibold text-gray-400 mb-1 font-mono">
-                    {currentMatch.sideB.mediaType === 'video' ? 'Direct Video URL (.mp4)' : 'Image URL'}
+                    Side B Photo / Video
                   </label>
-                  <input
-                    type="url"
-                    value={currentMatch.sideB.mediaUrl}
-                    onChange={(e) => handleSideChange('sideB', 'mediaUrl', e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-[10px] text-white focus:outline-none focus:border-purple-500 font-mono"
-                    placeholder="https://..."
+                  <MediaUploader
+                    mediaType={currentMatch.sideB.mediaType}
+                    mediaUrl={currentMatch.sideB.mediaUrl}
+                    sideLabel="Side B"
+                    accentColor="purple"
+                    onMediaChange={(newUrl, detectedType) => {
+                      if (!currentMatch) return;
+                      const updated = {
+                        ...currentMatch,
+                        sideB: {
+                          ...currentMatch.sideB,
+                          mediaUrl: newUrl,
+                          mediaType: detectedType,
+                        },
+                      };
+                      onUpdateMatchup(updated);
+                      showSavedNotification();
+                    }}
                   />
                 </div>
               </div>
